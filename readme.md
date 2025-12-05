@@ -42,6 +42,12 @@ step 3 - # username is admin and you get the generated pass though this command
 Step 4 access you apps via adresses like IP:port
 
 
+kubectl get applications -n argocd  # to gget what apps are running
+then
+kubectl describe application root-application -n argocd  # see what is working and what errors exist
+
+
+
 In short, Argo applies only what is defined in argo/applications:
    Under argo/applications/ folder , apps/yaml file contains YAML code for ArgoCD to execute the apps that reside in main apps/aplication_folder_name/k8s_manifests.yaml (deployment, service etc)
 In apps.yaml (the orchestrator) you can have a separate different repo for each app. In this file, YAMLs from different apps are separated with --- ( this does not break the YAML)

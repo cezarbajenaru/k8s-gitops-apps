@@ -6,9 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/<your-user>/eks-course-dev-gitops.git ############put the repo url here##########
+    repoURL: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
     targetRevision: main
-    path: argo/applications        # This folder defines apps to sync
+    path: argo/applications
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
