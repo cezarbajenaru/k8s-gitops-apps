@@ -78,10 +78,8 @@ venv/
 # 🪣 PROJECT-SPECIFIC ARTIFACTS
 ###################################
 
-# Generated JSON or YAML output files
+# Generated JSON output files (YAML files are NOT ignored - needed for GitOps manifests)
 *.json
-*.yaml
-*.yml
 !*.example.json
 !*.example.tfvars
 

@@ -10,9 +10,14 @@ spec:
     chart: argo-cd
     targetRevision: 7.1.3
     helm:
-      valueFiles:
-        - values.yaml
-      values:
+      values: |
+        server:
+          service:
+            type: NodePort
+            nodePort: 30080
+        configs:
+          params:
+            server.insecure: true
         crds:
           install: true
   destination:

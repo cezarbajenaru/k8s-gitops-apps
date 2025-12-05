@@ -8,5 +8,5 @@ spec:
     app: k9s
   ports:
   - port: 80
-    targetPort: 8089
+    targetPort: 8080
     nodePort: 30002
