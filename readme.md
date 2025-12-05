@@ -21,7 +21,9 @@ used tree in terminal
 ################# come back and recreate the whole tree everytime you add stuff like folders and files. Helps readability#####
 ```
 step 0 - have the infrastructure done with Terraform
-step 0.5 - 
+
+step 0.5
+
    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
    kubectl get pods -n argocd
 
@@ -29,6 +31,7 @@ step 0.5 -
 
 step 1 - apply bootstrap.yaml to install argo and link it to the cluster to the repo
    kubectl apply -f argo/bootstrap.yaml
+      reapply bootstrap if you change repo links or anything else, otherwise Argo will work on initial boostrap setup and things will fail
 
 After boostrap it automatically Upgrades the simple ArgoCD install created at at step 1  |  install/ will use it's own resources to configure itself TLS, RBAC, Autosync rules, server service type, Ingress, LoadBalancer(our case), Image updates, high availability configurations - ensures no drift, reproducability, version controlled platform config
 
@@ -45,6 +48,53 @@ Step 4 access you apps via adresses like IP:port
 kubectl get applications -n argocd  # to gget what apps are running
 then
 kubectl describe application root-application -n argocd  # see what is working and what errors exist
+
+step 5 - Security :
+
+Adding github to known hosts:
+
+# this could already be configured but you can try it / ArgoCD install already includes a known-hosts CM.
+
+ssh-keyscan github.com > github_known_hosts
+kubectl -n argocd create configmap argocd-ssh-known-hosts-cm \
+  --from-file=ssh_known_hosts=github_known_hosts
+
+# then hit this for Argo to restart with the above setting
+kubectl -n argocd rollout restart deployment argocd-repo-server
+
+# now we have to use the existing known hosts and use it for kubernetes configuration map
+
+kubectl -n argocd create configmap argocd-ssh-known-hosts-cm \
+  --from-file=ssh_known_hosts=github_known_hosts \
+  -o yaml --dry-run=client | kubectl apply -f -
+
+
+# this command will read the ssh key used for github and then use it in kubernetes secrets stored inside the cluster
+kubectl -n argocd create secret generic repo-ssh-creds \
+  --from-literal=sshPrivateKey="$(cat ~/.ssh/id_ed25519)"  # watch the name of the key to be the one used into github
+
+# make Argo use the ssh key
+kubectl -n argocd patch secret argocd-secret \
+  --type merge \
+  -p '{"stringData": {
+        "repositories": "- url: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git\n  sshPrivateKeySecret:\n    name: repo-ssh-creds\n    key: sshPrivateKey"
+  }}'
+
+
+kubectl -n argocd patch configmap argocd-cm \
+  --type merge \
+  -p '{"data": {
+        "sshPrivateKeySecretName": "repo-ssh-creds"
+  }}'
+
+
+# restarts repository server
+kubectl -n argocd rollout restart deployment argocd-repo-server
+
+# with this command you restart the applications in the namespace
+kubectl annotate application root-application -n argocd \
+  argocd.argoproj.io/refresh=hard --overwrite
+
 
 
 
