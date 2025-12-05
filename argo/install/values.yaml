@@ -1,7 +1,7 @@
 server:
   service:
     type: NodePort
-    nodePort: 30080  # or 80 in Minikube + Ingress later
+    nodePort: 30080
 configs:
   params:
-    server.insecure: true  # disable TLS between UI/admin (local only)
+    server.insecure: true

@@ -117,14 +117,26 @@ kubectl create configmap argocd-ssh-known-hosts-cm -n argocd \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # ArgoCD must explicitly know which repo uses which SSH private key - this patch configures this
-kubectl -n argocd patch configmap argocd-cm --type merge -p '
+kubectl -n argocd patch configmap argocd-cm \
+  --type merge \
+  -p '
 data:
   repositories: |
-    - url: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
+    - name: ekscourse
+      type: git
+      url: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
       sshPrivateKeySecret:
         name: argocd-ssh-creds
         key: sshPrivateKey
+'
 
+
+# for podinfo to run
+kubectl get svc -n default  # to get the 
+
+kubectl port-forward svc/podinfo -n default 32080:80 #choose a port, if not 32080, can be anything else. Just not 8080 because something always uses it
+# for Argo to run
+kubectl port-forward -n argocd svc/argocd-server 8089:443
 
 ################################################
 

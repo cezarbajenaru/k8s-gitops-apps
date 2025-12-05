@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
+    repoURL: https://github.com/cezarbajenaru/ekscourse_gitops_platform.git
     targetRevision: main
     path: argo/applications
   destination:
@@ -14,7 +14,7 @@ spec:
     namespace: argocd
   syncPolicy:
     automated:
-      prune: true                  # remove resources removed from Git
-      selfHeal: true               # fix drift automatically
+      prune: true
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true

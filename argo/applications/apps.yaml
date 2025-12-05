@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
+    repoURL: https://github.com/cezarbajenaru/ekscourse_gitops_platform.git
     targetRevision: main
     path: apps/podinfo
   destination:
@@ -29,7 +29,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
+    repoURL: https://github.com/cezarbajenaru/ekscourse_gitops_platform.git
     targetRevision: main
     path: apps/k9s
   destination:
