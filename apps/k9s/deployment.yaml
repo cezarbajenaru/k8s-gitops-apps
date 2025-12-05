@@ -16,8 +16,9 @@ spec:
     spec:
       containers:
       - name: k9s
-        image: quay.io/derailed/k9s:latest
+        image: ghcr.io/derailed/k9s-headless:latest
         args:
           - "--headless"
+          - "--readonly"
         ports:
         - containerPort: 8080
