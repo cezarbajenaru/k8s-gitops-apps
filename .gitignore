@@ -1,0 +1,131 @@
+###################################
+# 🧩 TERRAFORM CORE FILES
+###################################
+
+# Local .terraform directories (module cache, providers, plugin binaries)
+.terraform/
+
+# Local Terraform state files
+*.tfstate
+*.tfstate.*
+terraform.tfstate.backup
+crash.log
+
+# Terraform plan and log files
+*.tfplan
+*.tfplan.json
+*.tftrace
+*.tfdebug
+terraform.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Sensitive variable files
+*.tfvars
+*.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Ignore environment variables and local creds
+.env
+.envrc
+.env.*
+
+# Ignore backend configs (optional)
+backend.tfvars
+
+###################################
+# ☁️ AWS / CLOUD CREDENTIALS
+###################################
+.aws/
+*.pem
+*.key
+*.crt
+*.csr
+credentials
+config
+*.csv
+
+###################################
+# 🧠 EDITOR AND TOOLING FILES
+###################################
+
+# VSCode
+.vscode/
+.history/
+.settings/
+
+# IntelliJ / JetBrains
+.idea/
+
+# Obsidian (if you sync docs)
+.obsidian/
+
+# Python (for Lambda scripts or helpers)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+
+# Local virtual envs
+venv/
+.env/
+
+###################################
+# 🪣 PROJECT-SPECIFIC ARTIFACTS
+###################################
+
+# Generated JSON or YAML output files
+*.json
+*.yaml
+*.yml
+!*.example.json
+!*.example.tfvars
+
+# Local test data
+tmp/
+temp/
+*.bak
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+log/
+
+# Compressed files
+*.zip
+*.tar.gz
+*.tgz
+
+# System-specific
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+###################################
+# 🧩 TERRAFORM LINT / TEST TOOLS
+###################################
+.tflint.d/
+.tflint.json
+.tflint.hcl
+.tfsec/
+tfsec-results.json
+.tfplan.cache
+
+###################################
+# 🔧 OPTIONAL: SAFE EXCEPTIONS
+###################################
+#!terraform.tfvars.example
+#!backend.tfvars.example
+#!*.tf
+#!modules/
+#!main.tf
+#!variables.tf
+#!outputs.tf
+#!locals.tf

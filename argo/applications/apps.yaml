@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/<your-github-user>/exkscourse_gitops_platform.git
+    repoURL: https://github.com/cezarbajenaru/ekscourse_gitops_platform.git
     targetRevision: main
     path: argo/install
   destination:
