@@ -1,27 +1,43 @@
-~/projects/eks_course_platform_gitops
-  ├── argo/
-  │   ├── bootstrap.yaml
-  │   └── install/
-  │      └── kustomization.yaml
-         ├── helm-argocd.yaml
-         └── values.yaml
+```
+used tree in terminal
+├── apps
+│   ├── k9s
+│   │   ├── deployment.yaml
+│   │   └── service.yaml
+│   └── podinfo
+│       ├── deployment.yaml
+│       └── service.yaml
+├── argo
+│   ├── applications
+│   │   └── apps.yaml
+│   ├── bootstrap.yaml
+│   └── install
+│       ├── helm-argocd.yaml
+│       ├── kustomization.yaml
+│       └── values.yaml
+└── readme.md
 
-  │   └── applications/
-  │       └── <App-of-Apps>
-  └── apps/
-      └── podinfo/
-          ├── deployment.yaml
-          └── service.yaml
+7 directories, 10 files
 ################# come back and recreate the whole tree everytime you add stuff like folders and files. Helps readability#####
-
+```
 step 0 - have the infrastructure done with Terraform
+step 0.5 - 
+   kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+   kubectl get pods -n argocd
+
+
 
 step 1 - apply bootstrap.yaml to install argo and link it to the cluster to the repo
-step 2 - After boostrap it automatically Upgrades the simple ArgoCD install created at at step 1  |  install/ will use it's own resources to configure itself TLS, RBAC, Autosync rules, server service type, Ingress, LoadBalancer(our case), Image updates, high availability configurations - ensures no drift, reproducability, version controlled platform config
+   kubectl apply -f argo/bootstrap.yaml
+
+After boostrap it automatically Upgrades the simple ArgoCD install created at at step 1  |  install/ will use it's own resources to configure itself TLS, RBAC, Autosync rules, server service type, Ingress, LoadBalancer(our case), Image updates, high availability configurations - ensures no drift, reproducability, version controlled platform config
+
+step 2
+   kubectl port-forward -n argocd svc/argocd-server 8089:443
 
 step 3 - # username is admin and you get the generated pass though this command
-kubectl -n argocd get secret argocd-initial-admin-secret \
-  -o jsonpath="{.data.password}" | base64 -d && echo
+   kubectl -n argocd get secret argocd-initial-admin-secret \
+      -o jsonpath="{.data.password}" | base64 -d && echo
 
 Step 4 access you apps via adresses like IP:port
 

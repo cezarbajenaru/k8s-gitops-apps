@@ -6,12 +6,15 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://argoproj.github.io/argo-helm ############put the repo url here##########
+    repoURL: https://argoproj.github.io/argo-helm
     chart: argo-cd
-    targetRevision: 7.1.3  #find out what is the final version of argocd !!!
+    targetRevision: 7.1.3
     helm:
       valueFiles:
         - values.yaml
+      values:
+        crds:
+          install: true
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
@@ -19,3 +22,5 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
