@@ -142,6 +142,31 @@ kubectl port-forward -n argocd svc/argocd-server 8089:443
 kubectl annotate app root-application -n argocd argocd.argoproj.io/refresh=hard --overwrite
 kubectl annotate app podinfo -n argocd argocd.argoproj.io/refresh=hard --overwrite
 
+# login to argocd cli
+# first port forward argocd CLI
+
+#generates the password
+kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d; echo
+
+argocd login localhost:8089 --username admin --password <password> --insecure
+
+argocd app sync root-application
+argocd app list
+argocd app delete nameofapp --cascade
+argocd app get root-application  # get the errors regarding app and SSH problems 
+argocd context
+
+# secrets section
+argocd repo list
+kubectl get secrets -n argocd
+kubectl apply -f argo/install/secrets.yaml
+
+
+# Argo CLI
+argocd context set localhost:8089
+
+#creating already existent cluster Argo scripts for recreating ArgoCD configis
 
 ################################################
 

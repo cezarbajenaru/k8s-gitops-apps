@@ -1,6 +1,11 @@
+# Ignore secrets.yaml file for gitops
+secrets.yaml
+
+
 ###################################
 # 🧩 TERRAFORM CORE FILES
 ###################################
+
 
 # Local .terraform directories (module cache, providers, plugin binaries)
 .terraform/
