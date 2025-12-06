@@ -1,0 +1,8 @@
+wordpressUsername: admin
+wordpressPassword: admin123
+service:
+  type: NodePort
+persistentVolumeClaim:
+  enabled: true
+mariadb:
+  enabled: true

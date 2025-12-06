@@ -1,3 +1,6 @@
+minikube was used in this project because it runs in a VM and has memory of what we create here
+use kubectl to create the cluster and then point argocd installation that particular namespace - namespace that logically maps to the cluster 
+
 ```
 $ tree
 .
@@ -221,6 +224,13 @@ staging cluster can be semi-automatic with approve in Argo UI manually
 production cluster can be PR based + gating rules
 Practically git each commit auto-transfers to real infrastructure and real users(production case)
 
+TO DO AND LEARN
+
+
+
+1. move secrets to SOPS ???
+2. method to recreate Argo into an already existing and working cluster
+      how do you create the files? The need to be exported to Yaml and modified to a clean declarative state without breaking
 
 
 
