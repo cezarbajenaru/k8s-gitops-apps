@@ -24,6 +24,8 @@ kind: Application
 metadata:
   name: wordpress
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   project: default
   source:
@@ -36,7 +38,7 @@ spec:
         service:
           type: NodePort
         ingress:
-          enabled: true
+          enabled: false
           hostname: wordpress.local
         mariadb:
           enabled: true

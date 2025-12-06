@@ -1,4 +1,4 @@
-# Ignore secrets.yaml file for gitops
+
 secrets.yaml
 
 
