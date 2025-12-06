@@ -1,33 +1,38 @@
 ```
-used tree in terminal
+$ tree
+.
 ├── apps
-│   ├── k9s
-│   │   ├── deployment.yaml
-│   │   └── service.yaml
 │   └── podinfo
 │       ├── deployment.yaml
 │       └── service.yaml
 ├── argo
 │   ├── applications
-│   │   └── apps.yaml
+│   │   ├── apps.yaml
+│   │   └── root-application.yaml
 │   ├── bootstrap.yaml
 │   └── install
 │       ├── helm-argocd.yaml
 │       ├── kustomization.yaml
+│       ├── secrets.yaml
 │       └── values.yaml
+├── github_known_hosts
+├── pforward.sh
 └── readme.md
 
-7 directories, 10 files
+6 directories, 12 files
 ################# come back and recreate the whole tree everytime you add stuff like folders and files. Helps readability#####
 ```
-step 0 - have the infrastructure done with Terraform
+step 0 - have the infrastructure done with Terraform - VPC, EKS, Nodegroup
+
+#########################################################
 
 step 0.5
+Install the core ArgoCD at a minimal state ( no TLS, no autosync)
 
    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
    kubectl get pods -n argocd
 
-
+#########################################################
 
 step 1 - apply bootstrap.yaml to install argo and link it to the cluster to the repo
    kubectl apply -f argo/bootstrap.yaml
@@ -35,112 +40,102 @@ step 1 - apply bootstrap.yaml to install argo and link it to the cluster to the 
 
 After boostrap it automatically Upgrades the simple ArgoCD install created at at step 1  |  install/ will use it's own resources to configure itself TLS, RBAC, Autosync rules, server service type, Ingress, LoadBalancer(our case), Image updates, high availability configurations - ensures no drift, reproducability, version controlled platform config
 
+#########################################################
+Step 1.5
+root-application does not have a declarative root-application.yaml file ( the acual configuration of Argocd in a worker node and namespace) so we have to create it as a file. If not, you cannot edit it's main repo target and will remain orphan/ If orphan then secrets cannot be used by it and connect to depo github and does not have it's own source of truth into GIT.
+# use this command to export it into the repo. It must be edited out because it will have allot of automated configs inside. In this way we are altering the configmap in the correct way though this file declaration with a source of truth meaning, with GIT
+# Delete everything under status:
+kubectl get application root-application \
+  -n argocd \
+  -o yaml > argo/applications/root-application.yaml
+
+
+#########################################################
+
 step 2
    kubectl port-forward -n argocd svc/argocd-server 8089:443
+  Go to localhost:8089 ( I stopped using 8080 because there is always something using it)
 
-step 3 - # username is admin and you get the generated pass though this command
+#########################################################
+
+step 3 - # username is admin and you get the generated password though this command
    kubectl -n argocd get secret argocd-initial-admin-secret \
       -o jsonpath="{.data.password}" | base64 -d && echo
+#########################################################
 
 Step 4 access you apps via adresses like IP:port
-
 
 kubectl get applications -n argocd  # to gget what apps are running
 then
 kubectl describe application root-application -n argocd  # see what is working and what errors exist
 
+#########################################################
+
 step 5 - Security procedures:
 
-Adding github to known hosts:
+ssh-keygen -t ed25519 -C "argocd@minikube" -f ~/.ssh/argocd_ssh_key -N ""
+cat ~/.ssh/argocd_ssh_key.pub
+Go to: GitHub Repo → Settings → Deploy Keys → Add Key
+keep it read only, do not tick anything
+go to .gitignore and add sercrets.yaml file so you do not commit it to git ( not production level but works in development locally )
 
-# this could already be configured but you can try it / ArgoCD install already includes a known-hosts CM.
+# use the command to create the secret for Kubernetes with the name git-cezarbajenaru-ekscourse or whatever name
+kubectl create secret generic git-cezarbajenaru-ekscourse \
+  -n argocd \
+  --from-literal=type=git \
+  --from-literal=url=git@github.com:cezarbajenaru/ekscourse_gitops_platform.git \
+  --from-file=sshPrivateKey=/home/plasticmemory/.ssh/argocd_ssh_key
+
+protect the local key
+chmod 600 ~/.ssh/argocd_ssh_key
+
+Add GitHub to known_hosts inside cluster (optional but correct)
 
 ssh-keyscan github.com > github_known_hosts
-kubectl -n argocd create configmap argocd-ssh-known-hosts-cm \
-  --from-file=ssh_known_hosts=github_known_hosts
-
-# then hit this for Argo to restart with the above setting
-kubectl -n argocd rollout restart deployment argocd-repo-server
-
-# now we have to use the existing known hosts and use it for kubernetes configuration map
-
-kubectl -n argocd create configmap argocd-ssh-known-hosts-cm \
+kubectl create configmap argocd-ssh-known-hosts-cm \
+  -n argocd \
   --from-file=ssh_known_hosts=github_known_hosts \
   -o yaml --dry-run=client | kubectl apply -f -
 
+# restart repo-server to load the key
+kubectl rollout restart deploy/argocd-repo-server -n argocd
 
-# this command will read the ssh key used for github and then use it in kubernetes secrets stored inside the cluster
-kubectl -n argocd create secret generic repo-ssh-creds \
-  --from-literal=sshPrivateKey="$(cat ~/.ssh/id_ed25519)"  # watch the name of the key to be the one used into github
-
-# make Argo use the ssh key
-kubectl -n argocd patch secret argocd-secret \
-  --type merge \
-  -p '{"stringData": {
-        "repositories": "- url: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git\n  sshPrivateKeySecret:\n    name: repo-ssh-creds\n    key: sshPrivateKey"
-  }}'
+#check if there is any drift
+argocd repo list
+kubectl logs deploy/argocd-repo-server -n argocd | grep ssh
 
 
-kubectl -n argocd patch configmap argocd-cm \
-  --type merge \
-  -p '{"data": {
-        "sshPrivateKeySecretName": "repo-ssh-creds"
-  }}'
-
-
-# restarts repository server
-kubectl -n argocd rollout restart deployment argocd-repo-server
-
-# with this command you restart the applications in the namespace
-kubectl annotate application root-application -n argocd \
-  argocd.argoproj.io/refresh=hard --overwrite
 
 ##############################################
-# to replace Security Step 5 above ?? ##
 
-# this will create a key specifically for argo (use other names for easy recognition)
-ssh-keygen -t ed25519 -C "argocd@minikube" -f ~/.ssh/argocd_ssh_key
-
-cat ~/.ssh/argocd_ssh_key.pub
-# go to github => Settings → Deploy Keys → Add deploy key -> paste the ssh key generated locally with the command above (you can find it at ~/.ssh/ )
-
-# use absolute path for the key, otherwise it will not find directory
-kubectl create secret generic argocd-ssh-creds -n argocd \
-  --from-file=sshPrivateKey=/home/plasticmemory/.ssh/argocd_ssh_key
-# be shure to protect the key
-chmod 600 /home/plasticmemory/.ssh/argocd_ssh_key
-
-# add github to known hosts inside the cluster
-ssh-keyscan github.com > github_known_hosts
-kubectl create configmap argocd-ssh-known-hosts-cm -n argocd \
-  --from-file=ssh_known_hosts=github_known_hosts \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-# ArgoCD must explicitly know which repo uses which SSH private key - this patch configures this
-kubectl -n argocd patch configmap argocd-cm \
-  --type merge \
-  -p '
-data:
-  repositories: |
-    - name: ekscourse
-      type: git
-      url: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
-      sshPrivateKeySecret:
-        name: argocd-ssh-creds
-        key: sshPrivateKey
-'
+#show argo errors!
+argocd app get root-application
 
 
+#  restarts repository server
+kubectl -n argocd rollout restart deployment argocd-repo-server
+
+# forces a hard refresh / with this command you restart the applications in the namespace
+kubectl annotate application root-application -n argocd \
+  argocd.argoproj.io/refresh=hard --overwrite
+############################################
+############################################
+############################################
 # for podinfo to run
-kubectl get svc -n default  # to get the 
+kubectl get svc -n default  # to get the services running  / default because the apps are running in default namespace, not the same namespace as the root-application(argocd)
 
 kubectl port-forward svc/podinfo -n default 32080:80 #choose a port, if not 32080, can be anything else. Just not 8080 because something always uses it
 # for Argo to run
 kubectl port-forward -n argocd svc/argocd-server 8089:443
+############################################
+############################################
+############################################
 
-#reevaluate all connections
+# reevaluate all connections
 kubectl annotate app root-application -n argocd argocd.argoproj.io/refresh=hard --overwrite
 kubectl annotate app podinfo -n argocd argocd.argoproj.io/refresh=hard --overwrite
+
+############################################
 
 # login to argocd cli
 # first port forward argocd CLI
@@ -151,9 +146,13 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 
 argocd login localhost:8089 --username admin --password <password> --insecure
 
-argocd app sync root-application
+
+# force redeploy
+argocd app sync root-application #resync and name of app
+
+# more debugging
 argocd app list
-argocd app delete nameofapp --cascade
+argocd app delete nameofapp --cascade  #if there are pods broken and you want to get rid of the app completely ( do no forget to delete from scripts also)
 argocd app get root-application  # get the errors regarding app and SSH problems 
 argocd context
 
