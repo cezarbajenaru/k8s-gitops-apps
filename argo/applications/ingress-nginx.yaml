@@ -17,7 +17,6 @@ spec:
         controller:
           ingressClassResource:
             default: true
-        # For local clusters without cloud loadbalancer
         service:
           type: NodePort
           nodePorts:
