@@ -1,8 +1,13 @@
 wordpressUsername: admin
 wordpressPassword: admin123
 service:
-  type: NodePort
+  type: ClusterIP
 persistentVolumeClaim:
   enabled: true
 mariadb:
   enabled: true
+ingress:
+  enabled: true
+  hostname: wordpress.local
+  annotations:
+    kubernetes.io/ingress.class: nginx
