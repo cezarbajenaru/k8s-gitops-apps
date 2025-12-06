@@ -22,33 +22,6 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ingress-nginx
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: https://kubernetes.github.io/ingress-nginx
-    chart: ingress-nginx
-    targetRevision: 4.10.0
-    helm:
-      releaseName: ingress-nginx
-      values: |
-        controller:
-          ingressClassResource:
-            default: true
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: ingress-nginx
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
   name: wordpress
   namespace: argocd
 spec:
