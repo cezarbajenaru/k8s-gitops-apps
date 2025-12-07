@@ -7,20 +7,19 @@ metadata:
     argocd.argoproj.io/sync-wave: "3"
 spec:
   project: default
-  source:
-    repoURL: https://charts.bitnami.com/bitnami
-    chart: wordpress
-    targetRevision: 28.0.2
-    helm:
-      releaseName: wordpress
-      valueFiles:
-        - values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: default
+  sources:
+    - repoURL: https://charts.bitnami.com/bitnami
+      chart: wordpress
+      targetRevision: 28.0.2
+      helm:
+        releaseName: wordpress
+    - repoURL: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
+      targetRevision: main
+      path: apps/wordpress
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
-    syncOptions:
-      - CreateNamespace=true

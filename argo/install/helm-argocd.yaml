@@ -10,16 +10,18 @@ spec:
     chart: argo-cd
     targetRevision: 7.1.3
     helm:
-      values: |
-        server:
-          service:
-            type: NodePort
-            nodePort: 30080
-        configs:
-          params:
-            server.insecure: true
-        crds:
-          install: true
+      valueFiles:
+        - $values/argo/install/values.yaml
+  sources:
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      targetRevision: 7.1.3
+      helm:
+        valueFiles:
+          - $values/argo/install/values.yaml
+    - repoURL: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
+      targetRevision: main
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

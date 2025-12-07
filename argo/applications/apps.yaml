@@ -30,17 +30,26 @@ metadata:
     argocd.argoproj.io/sync-wave: "3"
 spec:
   project: default
-  source:
-    repoURL: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
-    targetRevision: main
-    path: apps/wordpress
   destination:
     server: https://kubernetes.default.svc
     namespace: default
+  sources:
+    - repoURL: https://charts.bitnami.com/bitnami
+      chart: wordpress
+      targetRevision: 28.0.2
+      helm:
+        releaseName: wordpress
+        valueFiles:
+          - $values/apps/wordpress/values.yaml
+    - repoURL: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
+      targetRevision: main
+      ref: values
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -54,9 +63,7 @@ spec:
   source:
     repoURL: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
     targetRevision: main
-    path: argo/applications
-    directory:
-      include: argocd-ingress-main.yaml #was argocd-ingress.yaml must coincide with argo/applications/argocd-ingress-main.yaml?
+    path: argo/ingress
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
@@ -64,3 +71,5 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

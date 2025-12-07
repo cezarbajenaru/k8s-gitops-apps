@@ -1,7 +1,29 @@
 server:
   service:
-    type: NodePort
-    nodePort: 30080
+    type: ClusterIP
+  ingress:
+    enabled: false
+
 configs:
   params:
     server.insecure: true
+  
+  repositories:
+    ekscourse-gitops:
+      url: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
+      sshPrivateKeySecret:
+        name: git-cezarbajenaru-ekscourse
+        key: sshPrivateKey
+
+repoServer:
+  volumes:
+    - name: custom-ssh-known-hosts
+      configMap:
+        name: argocd-ssh-known-hosts-cm
+  volumeMounts:
+    - name: custom-ssh-known-hosts
+      mountPath: /app/config/ssh
+      subPath: ssh_known_hosts
+
+crds:
+  install: true

@@ -65,6 +65,12 @@ step 3 - # username is admin and you get the generated password though this comm
    kubectl -n argocd get secret argocd-initial-admin-secret \
       -o jsonpath="{.data.password}" | base64 -d && echo
 #########################################################
+step 3.5 - you must login the actual ArgoCD CLI itself into the admin with the exactly same credentials used for the ArgoUI
+
+argocd login localhost:8089 --insecure --username admin --password $(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+
+
+#######################################################
 
 Step 4 access you apps via adresses like IP:port
 
@@ -124,14 +130,39 @@ kubectl annotate application root-application -n argocd \
 ############################################
 ############################################
 ############################################
-# for podinfo to run
-kubectl get svc -n default  # to get the services running  / default because the apps are running in default namespace, not the same namespace as the root-application(argocd)
+What you must now add: Ingress Resources for each app you want to expose
+these need to have their own scripts now ( wsl2 was with port forwarding )
 
-kubectl port-forward svc/podinfo -n default 32080:80 #choose a port, if not 32080, can be anything else. Just not 8080 because something always uses it
-# for Argo to run
-kubectl port-forward -n argocd svc/argocd-server 8089:443
+Argo CD UI
 
-kubectl get pods -A -w
+WordPress UI
+
+Podinfo app
+
+Any future service
+
+These are separate YAML manifests, like the one we just created for Argo CD.
+```
+(Client / Browser)
+      |
+      ↓
+[ Ingress Controller ]  <-- ingress-nginx-main.yaml   Application (the main load balancer)
+      |
+      +── (host: argocd.local) → argocd-service
+      |           ↑
+      |    Ingress Rule: argocd-ingress.yaml
+      |
+      +── (host: podinfo.local) → podinfo-service
+      |           ↑
+      |    Ingress Rule: podinfo/ingress.yaml
+      |
+      +── (host: wordpress.local) → wordpress-service
+                  ↑
+          Ingress Rule: wordpress/ingress.yaml (not created yet)
+
+
+```
+
 ############################################
 ############################################
 ############################################
