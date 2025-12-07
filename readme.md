@@ -130,6 +130,8 @@ kubectl get svc -n default  # to get the services running  / default because the
 kubectl port-forward svc/podinfo -n default 32080:80 #choose a port, if not 32080, can be anything else. Just not 8080 because something always uses it
 # for Argo to run
 kubectl port-forward -n argocd svc/argocd-server 8089:443
+
+kubectl get pods -A -w
 ############################################
 ############################################
 ############################################
