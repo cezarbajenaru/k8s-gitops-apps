@@ -20,7 +20,7 @@ spec:
         service:
           type: NodePort
           nodePorts:
-            http: 30080
+            http: 30081
             https: 30443
   destination:
     server: https://kubernetes.default.svc
