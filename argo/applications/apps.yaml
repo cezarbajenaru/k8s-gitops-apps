@@ -36,7 +36,7 @@ spec:
   sources:
     - repoURL: oci://registry-1.docker.io/bitnamicharts/wordpress
       chart: wordpress
-      targetRevision: 28.0.2
+      targetRevision: 23.1.8
       helm:
         releaseName: wordpress
         valueFiles:
