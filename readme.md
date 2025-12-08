@@ -298,6 +298,6 @@ kubectl apply -f argo/bootstrap.yaml
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 
 # 10. Access ArgoCD UI
-kubectl port-forward svc/argocd-server -n argocd 8080:80
+kubectl port-forward svc/argocd-server -n argocd 8089:80
 
-http://localhost:8080
+http://localhost:8089

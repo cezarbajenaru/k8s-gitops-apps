@@ -33,17 +33,31 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: default
-  sources:
-    - repoURL: oci://registry-1.docker.io/bitnamicharts/wordpress
-      chart: wordpress
-      targetRevision: 23.1.8
-      helm:
-        releaseName: wordpress
-        valueFiles:
-          - $values/apps/wordpress/values.yaml
-    - repoURL: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
-      targetRevision: main
-      ref: values
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: wordpress
+    targetRevision: 23.1.8
+    helm:
+      releaseName: wordpress
+      values: |
+        service:
+          type: ClusterIP
+        ingress:
+          enabled: false
+        mariadb:
+          enabled: true
+          auth:
+            rootPassword: "dev-root-password"
+            password: "dev-wp-password"
+            username: "bn_wordpress"
+            database: "bitnami_wordpress"
+          primary:
+            persistence:
+              enabled: true
+              size: 8Gi
+        persistence:
+          enabled: true
+          size: 10Gi
   syncPolicy:
     automated:
       prune: true
