@@ -7,13 +7,18 @@ server:
 configs:
   params:
     server.insecure: true
-  
+
   repositories:
     ekscourse-gitops:
       url: git@github.com:cezarbajenaru/ekscourse_gitops_platform.git
       sshPrivateKeySecret:
         name: git-cezarbajenaru-ekscourse
         key: sshPrivateKey
+    bitnami-oci:
+      name: bitnami-oci
+      type: helm
+      url: oci://registry-1.docker.io/bitnamicharts
+      enableOCI: "true"
 
 repoServer:
   volumes:
