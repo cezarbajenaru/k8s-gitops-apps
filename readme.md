@@ -276,7 +276,7 @@ minikube addons enable ingress
 kubectl create namespace argocd
 
 # 3. Install ArgoCD (this creates the Application CRD you need)
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.11.0/manifests/install.yaml
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.2.1/manifests/install.yaml
 
 # 4. Wait (this takes 2-3 minutes, be patient)
 kubectl get pods -n argocd -w
