@@ -5,14 +5,19 @@ use kubectl to create the cluster and then point argocd installation that partic
 $ tree
 .
 ├── apps
-│   └── podinfo
-│       ├── deployment.yaml
-│       └── service.yaml
+│   ├── podinfo
+│   │   ├── deployment.yaml
+│   │   ├── ingress.yaml
+│   │   └── service.yaml
+│   └── wordpress
+│       └── ingress.yaml
 ├── argo
 │   ├── applications
 │   │   ├── apps.yaml
 │   │   └── root-application.yaml
 │   ├── bootstrap.yaml
+│   ├── ingress
+│   │   └── argocd-ingress.yaml
 │   └── install
 │       ├── helm-argocd.yaml
 │       ├── kustomization.yaml
@@ -22,14 +27,46 @@ $ tree
 ├── pforward.sh
 └── readme.md
 
-6 directories, 12 files
+8 directories, 15 files
 ################# come back and recreate the whole tree everytime you add stuff like folders and files. Helps readability#####
 ```
-step 0 - have the infrastructure done with Terraform - VPC, EKS, Nodegroup
 
-#########################################################
+# 1. Fresh start
+minikube delete
+minikube start
+minikube addons enable ingress
 
-step 0.5
+# 2. Create namespace
+kubectl create namespace argocd
+
+# 3. Install ArgoCD (this creates the Application CRD you need)
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.2.1/manifests/install.yaml
+
+# 4. Wait (this takes 2-3 minutes, be patient)
+kubectl get pods -n argocd -w
+# Press Ctrl+C when all pods show "Running"
+
+# 5. Apply your secrets
+kubectl apply -f argo/install/secrets.yaml
+
+# 6. Create SSH known hosts
+kubectl create configmap argocd-ssh-known-hosts-cm --from-file=ssh_known_hosts=github_known_hosts -n argocd
+
+# 7. Now you can apply helm-argocd.yaml (Application CRD exists now)
+kubectl apply -f argo/install/helm-argocd.yaml
+
+# 8. Bootstrap your apps
+kubectl apply -f argo/bootstrap.yaml
+
+# 9. Get the admin password
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+# 10. Access ArgoCD UI
+kubectl port-forward svc/argocd-server -n argocd 8089:80
+
+http://localhost:8089
+
+##########################################
 Install the core ArgoCD at a minimal state ( no TLS, no autosync)
 
    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
@@ -37,42 +74,30 @@ Install the core ArgoCD at a minimal state ( no TLS, no autosync)
 
 #########################################################
 
-step 1 - apply bootstrap.yaml to install argo and link it to the cluster to the repo
-   kubectl apply -f argo/bootstrap.yaml
+
       reapply bootstrap if you change repo links or anything else, otherwise Argo will work on initial boostrap setup and things will fail
 
 After boostrap it automatically Upgrades the simple ArgoCD install created at at step 1  |  install/ will use it's own resources to configure itself TLS, RBAC, Autosync rules, server service type, Ingress, LoadBalancer(our case), Image updates, high availability configurations - ensures no drift, reproducability, version controlled platform config
 
 #########################################################
-Step 1.5
-root-application does not have a declarative root-application.yaml file ( the acual configuration of Argocd in a worker node and namespace) so we have to create it as a file. If not, you cannot edit it's main repo target and will remain orphan/ If orphan then secrets cannot be used by it and connect to depo github and does not have it's own source of truth into GIT.
-# use this command to export it into the repo. It must be edited out because it will have allot of automated configs inside. In this way we are altering the configmap in the correct way though this file declaration with a source of truth meaning, with GIT
+
+root-application does not have a declarative root-application.yaml file ( the acual configuration of Argocd in a worker node and namespace) so we have to create it as a file. If not, you cannot edit it's main repo target and will remain orphan/ If orphan then secrets cannot be used by it and cannot connect to repo on github and does not have it's own source of truth into GIT.
+# use this command to export it into the repo. It must be edited out because it will have allot of automated configs inside. In this way we are altering the configmap in the correct way through this file declaration with a source of truth meaning(git repo is the source of truth)
 # Delete everything under status:
 kubectl get application root-application \
   -n argocd \
   -o yaml > argo/applications/root-application.yaml
 
 
-#########################################################
 
-step 2
-   kubectl port-forward -n argocd svc/argocd-server 8089:443
-  Go to localhost:8089 ( I stopped using 8080 because there is always something using it)
-
-#########################################################
-
-step 3 - # username is admin and you get the generated password though this command
-   kubectl -n argocd get secret argocd-initial-admin-secret \
-      -o jsonpath="{.data.password}" | base64 -d && echo
-#########################################################
-step 3.5 - you must login the actual ArgoCD CLI itself into the admin with the exactly same credentials used for the ArgoUI
+you must login the actual ArgoCD CLI itself into the admin with the exactly same credentials used for the ArgoUI
 
 argocd login localhost:8089 --insecure --username admin --password $(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 
 
 #######################################################
 
-Step 4 access you apps via adresses like IP:port
+access you apps via adresses like IP:port
 
 kubectl get applications -n argocd  # to gget what apps are running
 then
@@ -80,31 +105,7 @@ kubectl describe application root-application -n argocd  # see what is working a
 
 #########################################################
 
-step 5 - Security procedures:
 
-ssh-keygen -t ed25519 -C "argocd@minikube" -f ~/.ssh/argocd_ssh_key -N ""
-cat ~/.ssh/argocd_ssh_key.pub
-Go to: GitHub Repo → Settings → Deploy Keys → Add Key
-keep it read only, do not tick anything
-go to .gitignore and add sercrets.yaml file so you do not commit it to git ( not production level but works in development locally )
-
-# use the command to create the secret for Kubernetes with the name git-cezarbajenaru-ekscourse or whatever name
-kubectl create secret generic git-cezarbajenaru-ekscourse \
-  -n argocd \
-  --from-literal=type=git \
-  --from-literal=url=git@github.com:cezarbajenaru/ekscourse_gitops_platform.git \
-  --from-file=sshPrivateKey=/home/plasticmemory/.ssh/argocd_ssh_key
-
-protect the local key
-chmod 600 ~/.ssh/argocd_ssh_key
-
-Add GitHub to known_hosts inside cluster (optional but correct)
-
-ssh-keyscan github.com > github_known_hosts
-kubectl create configmap argocd-ssh-known-hosts-cm \
-  -n argocd \
-  --from-file=ssh_known_hosts=github_known_hosts \
-  -o yaml --dry-run=client | kubectl apply -f -
 
 # restart repo-server to load the key
 kubectl rollout restart deploy/argocd-repo-server -n argocd
@@ -267,37 +268,3 @@ TO DO AND LEARN
 
 
 
-# 1. Fresh start
-minikube delete
-minikube start
-minikube addons enable ingress
-
-# 2. Create namespace
-kubectl create namespace argocd
-
-# 3. Install ArgoCD (this creates the Application CRD you need)
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v3.2.1/manifests/install.yaml
-
-# 4. Wait (this takes 2-3 minutes, be patient)
-kubectl get pods -n argocd -w
-# Press Ctrl+C when all pods show "Running"
-
-# 5. Apply your secrets
-kubectl apply -f argo/install/secrets.yaml
-
-# 6. Create SSH known hosts
-kubectl create configmap argocd-ssh-known-hosts-cm --from-file=ssh_known_hosts=github_known_hosts -n argocd
-
-# 7. Now you can apply helm-argocd.yaml (Application CRD exists now)
-kubectl apply -f argo/install/helm-argocd.yaml
-
-# 8. Bootstrap your apps
-kubectl apply -f argo/bootstrap.yaml
-
-# 9. Get the admin password
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-
-# 10. Access ArgoCD UI
-kubectl port-forward svc/argocd-server -n argocd 8089:80
-
-http://localhost:8089
