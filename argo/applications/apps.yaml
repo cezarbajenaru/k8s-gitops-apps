@@ -43,7 +43,7 @@ spec:
         image:
           registry: docker.io
           repository: plasticmemory/eks_wordpress
-          tag: IMAGE_TAG_PLACEHOLDER
+          tag: 86c1a8f6007665b3b14d567abb28067a651d7c24
         service:
           type: ClusterIP
         ingress:
